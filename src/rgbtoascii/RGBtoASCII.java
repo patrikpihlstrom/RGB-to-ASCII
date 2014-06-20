@@ -20,14 +20,36 @@ public class RGBtoASCII
 			PopulateCharacterMap(m_characters);
 			BufferedImage image = ImageIO.read(new File("image.png"));
 			
-			float[][] pixels = new float[image.getHeight()][image.getWidth()];
-			short maxValue = 255;
-
-			for (int y = 0, x = 0; y < image.getHeight(); y++) 
+			float compress = (image.getWidth() > image.getHeight()) ? ((float)image.getWidth()/256):((float)image.getHeight()/256);
+			
+			if (compress <= 0)
 			{
-				for (x = 0; x < image.getWidth(); x++) 
+				compress = 1;
+			}
+			
+			float[][] pixels = new float[(int)(image.getHeight()/compress)][(int)(image.getWidth()/compress)];
+			
+			short maxValue = 0;
+
+			for (int y = 0, x = 0; y < pixels.length; y++) 
+			{
+				for (x = 0; x < pixels[0].length; x++)
 				{
-					short r = (short)((image.getRGB(x, y) >> 16) & 0xff), g = (short)((image.getRGB(x, y) >> 8) & 0xff), b = (short)((image.getRGB(x, y)) & 0xff);
+					int r = 0, g = 0, b = 0;
+					
+					for (int i = 0, j = 0; i < compress; i++) 
+					{
+						for (j = 0; j < compress; j++)
+						{
+							r += (int)((image.getRGB((int)(x*compress + j), (int)(y*compress + i)) >> 16) & 0xff);
+							g += (int)((image.getRGB((int)(x*compress + j), (int)(y*compress + i)) >> 8) & 0xff);
+							b += (int)((image.getRGB((int)(x*compress + j), (int)(y*compress + i)) & 0xff));
+						}	
+					}
+					
+					r /= Math.pow(compress, 2);
+					g /= Math.pow(compress, 2);
+					b /= Math.pow(compress, 2);
 					
 					if (r >= g)
 					{
@@ -53,9 +75,9 @@ public class RGBtoASCII
 				}
 			}
 			
-			for (int y = 0, x = 0; y < image.getHeight(); y++) 
+			for (int y = 0, x = 0; y < pixels.length; y++) 
 			{
-				for (x = 0; x < image.getWidth(); x++) 
+				for (x = 0; x < pixels[0].length; x++) 
 				{
 					pixels[y][x] /= maxValue;
 				}
@@ -65,21 +87,14 @@ public class RGBtoASCII
 			
 			for (int y = 0, x = 0; y < pixels.length; y++) 
 			{
-				boolean newLine = false;
+				output.print(GetChar(3));
 				
 				for (x = 0; x < pixels[0].length; x++) 
 				{
-					if (pixels[y][x] != -1)
-					{
-						output.print(GetChar((int)(pixels[y][x]*100)));
-						newLine = true;
-					}
+					output.print(GetChar((int)(pixels[y][x]*100)));
 				}
 				
-				if (newLine)
-				{
-					output.println();
-				}
+				output.println();
 			}
 			
 			output.close();
